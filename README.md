@@ -90,3 +90,15 @@ Because Kiosk Mode hides the navigation menus:
 - **`c`** — Open Command Bar / Quick Search.
 - **`e`** — Enter Dashboard Edit Mode.
 
+
+## Snapshots
+### Main View 
+<img width="952" height="572" alt="image" src="https://github.com/user-attachments/assets/26888655-b82c-4809-ae92-c8b5f4a9ab9a" />
+
+### Night Mode
+<img width="736" height="412" alt="image" src="https://github.com/user-attachments/assets/1e442428-ee48-47e6-8530-5a44226a409c" />
+
+### Controls
+<img width="990" height="345" alt="image" src="https://github.com/user-attachments/assets/9a31090a-84d4-474c-9173-8ca798654ad0" />
+
+
