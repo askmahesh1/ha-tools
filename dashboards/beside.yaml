@@ -1,0 +1,637 @@
+kiosk_mode:
+  hide_account: true
+  hide_header: true
+  hide_menubutton: true
+  hide_notifications: true
+  hide_overflow: true
+  hide_sidebar: true
+  non_admin_settings:
+    hide_header: true
+    hide_sidebar: true
+views:
+  # =========================================================================
+  # VIEW 1: MAIN BEDSIDE CLOCK
+  # =========================================================================
+  - title: Bedside
+    path: bedside
+    type: panel
+    badges: []
+    card_mod:
+      style: |
+        ha-app-layout {
+          --header-height: 0px !important;
+        }
+        app-header, ha-top-app-bar, .header {
+          display: none !important;
+        }
+        #view, hui-view, hui-panel-view {
+          padding: 0 !important;
+          margin: 0 !important;
+          height: 100vh !important;
+          min-height: 100vh !important;
+          max-height: 100vh !important;
+          width: 100% !important;
+          overflow: hidden !important;
+        }
+    cards:
+      - type: vertical-stack
+        card_mod:
+          style: |
+            ha-card {
+              border: none !important;
+              box-shadow: none !important;
+              background: transparent !important;
+            }
+            :host {
+              display: flex !important;
+              flex-direction: column !important;
+              align-items: center !important;
+              justify-content: center !important;
+              min-height: 100vh !important;
+              height: 100vh !important;
+              width: 100% !important;
+              background: radial-gradient(circle at 50% 50%, #0f172a 0%, #030712 100%) !important;
+              overflow: hidden !important;
+              box-sizing: border-box !important;
+              padding: 0 !important;
+              margin: 0 !important;
+            }
+            #root {
+              display: flex !important;
+              flex-direction: column !important;
+              align-items: center !important;
+              justify-content: center !important;
+              min-height: 100vh !important;
+              height: 100vh !important;
+              width: 100% !important;
+              margin: 0 auto !important;
+              gap: 28px !important;
+              text-align: center !important;
+            }
+            #root > * {
+              width: 100% !important;
+              display: flex !important;
+              justify-content: center !important;
+              align-items: center !important;
+              margin: 0 auto !important;
+            }
+        cards:
+          - type: custom:button-card
+            entity: sensor.time
+            triggers_update:
+              - sensor.time
+              - weather.your_weather_entity     # <-- REPLACE with your weather entity
+              - sensor.bedroom_temperature       # <-- REPLACE with your temp sensor
+              - sensor.bedroom_humidity          # <-- REPLACE with your humidity sensor
+            show_name: false
+            show_icon: false
+            show_state: false
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            double_tap_action:
+              action: none
+            styles:
+              card:
+                - background: transparent
+                - border: none
+                - box_shadow: none
+                - padding: 0px
+                - margin: 0 auto
+                - cursor: default
+                - width: 100%
+                - display: flex
+                - justify_content: center
+                - align_items: center
+              grid:
+                - grid-template-areas: '"clock"'
+                - grid-template-columns: 100%
+                - justify-items: center
+                - align-items: center
+                - width: 100%
+              custom_fields:
+                clock:
+                  - width: 100%
+                  - display: flex
+                  - flex-direction: column
+                  - align-items: center
+                  - justify-content: center
+                  - text-align: center
+                  - margin: 0 auto
+            custom_fields:
+              clock: |
+                [[[
+                  // ================= USER ENTITY CONFIGURATION =================
+                  const ENTITY_WEATHER   = 'weather.your_weather_entity';    // e.g. weather.home
+                  const ENTITY_ROOM_TEMP = 'sensor.bedroom_temperature';     // e.g. sensor.bedroom_temp
+                  const ENTITY_ROOM_HUM  = 'sensor.bedroom_humidity';        // e.g. sensor.bedroom_humidity
+                  // ============================================================
+
+                  const now = new Date();
+                  let hours = now.getHours();
+                  const minutes = String(now.getMinutes()).padStart(2, '0');
+                  const ampm = hours >= 12 ? 'PM' : 'AM';
+                  hours = hours % 12;
+                  hours = hours ? hours : 12;
+
+                  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+                  const dateStr = `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}`;
+
+                  // Weather Data (with fallback preview if entity not found)
+                  const weather = states[ENTITY_WEATHER];
+                  const weatherState = weather ? weather.state : 'sunny';
+                  const weatherTemp = (weather && weather.attributes && weather.attributes.temperature != null)
+                    ? Math.round(weather.attributes.temperature)
+                    : '72';
+                  const weatherCap = weather ? (weatherState.charAt(0).toUpperCase() + weatherState.slice(1)) : 'Sunny';
+
+                  let weatherIcon = 'mdi:weather-sunny';
+                  if (weatherState === 'clear-night') weatherIcon = 'mdi:weather-night';
+                  else if (weatherState === 'partlycloudy') weatherIcon = 'mdi:weather-partly-cloudy';
+                  else if (weatherState === 'cloudy') weatherIcon = 'mdi:weather-cloudy';
+                  else if (weatherState === 'rainy' || weatherState === 'pouring') weatherIcon = 'mdi:weather-rainy';
+                  else if (weatherState === 'snowy') weatherIcon = 'mdi:weather-snowy';
+                  else if (weatherState === 'lightning') weatherIcon = 'mdi:weather-lightning';
+
+                  // Indoor Temp & Humidity (with fallback preview if entity not found)
+                  const roomTempEnt = states[ENTITY_ROOM_TEMP];
+                  const roomTemp = (roomTempEnt && !isNaN(parseFloat(roomTempEnt.state)))
+                    ? parseFloat(roomTempEnt.state).toFixed(1)
+                    : '70.0';
+
+                  const roomHumEnt = states[ENTITY_ROOM_HUM];
+                  const roomHum = (roomHumEnt && !isNaN(parseFloat(roomHumEnt.state)))
+                    ? Math.round(parseFloat(roomHumEnt.state))
+                    : '45';
+
+                  return `
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; width: 100%; max-width: 95vw; margin: 0 auto;">
+                      
+                      <!-- Giant Digits -->
+                      <div style="display: flex; align-items: baseline; justify-content: center; line-height: 0.82; margin: 0 auto; padding: 0;">
+                        <span style="font-size: min(24vw, 30vh, 220px); font-weight: 800; letter-spacing: -5px; color: #ffffff; font-variant-numeric: tabular-nums; text-shadow: 0 0 45px rgba(255, 255, 255, 0.25), 0 0 90px rgba(56, 189, 248, 0.3);">${hours}:${minutes}</span>
+                        <span style="font-size: min(6vw, 7vh, 50px); font-weight: 700; color: #38bdf8; margin-left: min(2.5vw, 20px); letter-spacing: 2px; text-transform: uppercase; text-shadow: 0 0 25px rgba(56, 189, 248, 0.6);">${ampm}</span>
+                      </div>
+
+                      <!-- Date -->
+                      <div style="font-size: min(4.5vw, 5.5vh, 36px); font-weight: 500; color: #94a3b8; letter-spacing: 0.04em; margin-top: min(2.5vh, 22px); margin-bottom: min(3.5vh, 32px); text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6); text-align: center;">${dateStr}</div>
+
+                      <!-- Status Capsule -->
+                      <div style="display: flex; align-items: center; justify-content: center; margin: 0 auto;">
+                        <div style="display: inline-flex; align-items: center; justify-content: center; gap: min(2vw, 14px); padding: min(1.8vh, 14px) min(3.5vw, 32px); background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-radius: 9999px; box-shadow: 0 10px 35px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.1); font-size: min(3vw, 3.5vh, 22px); font-weight: 600; color: #e2e8f0; white-space: nowrap;">
+                          <span style="display: inline-flex; align-items: center; gap: 8px;">
+                            <ha-icon icon="${weatherIcon}" style="--mdc-icon-size: min(3.2vw, 3.8vh, 24px); color: #facc15;"></ha-icon>
+                            <span>${weatherCap} • ${weatherTemp}°F</span>
+                          </span>
+                          <span style="color: rgba(255, 255, 255, 0.3); margin: 0 4px;">•</span>
+                          <span style="display: inline-flex; align-items: center; gap: 8px;">
+                            <ha-icon icon="mdi:bed-king-outline" style="--mdc-icon-size: min(3.2vw, 3.8vh, 24px); color: #38bdf8;"></ha-icon>
+                            <span>Room ${roomTemp}°F</span>
+                          </span>
+                          <span style="color: rgba(255, 255, 255, 0.3); margin: 0 4px;">•</span>
+                          <span style="display: inline-flex; align-items: center; gap: 8px;">
+                            <ha-icon icon="mdi:water-percent" style="--mdc-icon-size: min(3.2vw, 3.8vh, 24px); color: #38bdf8;"></ha-icon>
+                            <span>${roomHum}%</span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  `;
+                ]]]
+          - type: horizontal-stack
+            card_mod:
+              style: |
+                #root {
+                  display: flex !important;
+                  flex-direction: row !important;
+                  justify-content: center !important;
+                  align-items: center !important;
+                  gap: 16px !important;
+                  width: auto !important;
+                  margin: 0 auto !important;
+                }
+                #root > * {
+                  flex: 0 0 auto !important;
+                }
+            cards:
+              - type: custom:button-card
+                icon: mdi:weather-night
+                name: Night Mode
+                show_icon: true
+                show_name: true
+                styles:
+                  card:
+                    - width: 140px
+                    - height: 50px
+                    - background: rgba(255, 255, 255, 0.07)
+                    - border: 1px solid rgba(255, 255, 255, 0.14)
+                    - border_radius: 9999px
+                    - backdrop_filter: blur(12px)
+                    - box_shadow: 0 4px 15px rgba(0, 0, 0, 0.3)
+                    - cursor: pointer
+                    - margin: 0 auto
+                  grid:
+                    - grid-template-areas: '"i n"'
+                    - grid-template-columns: min-content 1fr
+                  icon:
+                    - color: '#38bdf8'
+                    - width: 24px
+                  name:
+                    - color: '#e2e8f0'
+                    - font_size: 15px
+                    - font_weight: 600
+                    - text_transform: none
+                tap_action:
+                  action: navigate
+                  navigation_path: /bedside-display/night
+              - type: custom:button-card
+                icon: mdi:tune-variant
+                name: Controls
+                show_icon: true
+                show_name: true
+                styles:
+                  card:
+                    - width: 140px
+                    - height: 50px
+                    - background: rgba(255, 255, 255, 0.07)
+                    - border: 1px solid rgba(255, 255, 255, 0.14)
+                    - border_radius: 9999px
+                    - backdrop_filter: blur(12px)
+                    - box_shadow: 0 4px 15px rgba(0, 0, 0, 0.3)
+                    - cursor: pointer
+                    - margin: 0 auto
+                  grid:
+                    - grid-template-areas: '"i n"'
+                    - grid-template-columns: min-content 1fr
+                  icon:
+                    - color: '#38bdf8'
+                    - width: 24px
+                  name:
+                    - color: '#e2e8f0'
+                    - font_size: 15px
+                    - font_weight: 600
+                    - text_transform: none
+                tap_action:
+                  action: navigate
+                  navigation_path: /bedside-display/controls
+              - type: custom:button-card
+                icon: mdi:home-outline
+                name: Overview
+                show_icon: true
+                show_name: true
+                styles:
+                  card:
+                    - width: 140px
+                    - height: 50px
+                    - background: rgba(255, 255, 255, 0.07)
+                    - border: 1px solid rgba(255, 255, 255, 0.14)
+                    - border_radius: 9999px
+                    - backdrop_filter: blur(12px)
+                    - box_shadow: 0 4px 15px rgba(0, 0, 0, 0.3)
+                    - cursor: pointer
+                    - margin: 0 auto
+                  grid:
+                    - grid-template-areas: '"i n"'
+                    - grid-template-columns: min-content 1fr
+                  icon:
+                    - color: '#38bdf8'
+                    - width: 24px
+                  name:
+                    - color: '#e2e8f0'
+                    - font_size: 15px
+                    - font_weight: 600
+                    - text_transform: none
+                tap_action:
+                  action: navigate
+                  navigation_path: /home-overview/overview   # <-- REPLACE with your default dashboard path
+
+  # =========================================================================
+  # VIEW 2: DEEP NIGHT MODE
+  # =========================================================================
+  - title: Deep Night
+    path: night
+    type: panel
+    badges: []
+    card_mod:
+      style: |
+        ha-app-layout {
+          --header-height: 0px !important;
+        }
+        app-header, ha-top-app-bar, .header {
+          display: none !important;
+        }
+        #view, hui-view, hui-panel-view {
+          padding: 0 !important;
+          margin: 0 !important;
+          height: 100vh !important;
+          min-height: 100vh !important;
+          max-height: 100vh !important;
+          width: 100% !important;
+          overflow: hidden !important;
+        }
+    cards:
+      - type: vertical-stack
+        card_mod:
+          style: |
+            ha-card {
+              border: none !important;
+              box-shadow: none !important;
+              background: transparent !important;
+            }
+            :host {
+              display: flex !important;
+              flex-direction: column !important;
+              align-items: center !important;
+              justify-content: center !important;
+              min-height: 100vh !important;
+              height: 100vh !important;
+              width: 100% !important;
+              background: #000000 !important;
+              overflow: hidden !important;
+              box-sizing: border-box !important;
+              padding: 0 !important;
+              margin: 0 !important;
+            }
+            #root {
+              display: flex !important;
+              flex-direction: column !important;
+              align-items: center !important;
+              justify-content: center !important;
+              min-height: 100vh !important;
+              height: 100vh !important;
+              width: 100% !important;
+              margin: 0 auto !important;
+              gap: 28px !important;
+              text-align: center !important;
+            }
+            #root > * {
+              width: 100% !important;
+              display: flex !important;
+              justify-content: center !important;
+              align-items: center !important;
+              margin: 0 auto !important;
+            }
+        cards:
+          - type: custom:button-card
+            entity: sensor.time
+            triggers_update:
+              - sensor.time
+            show_name: false
+            show_icon: false
+            show_state: false
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            double_tap_action:
+              action: none
+            styles:
+              card:
+                - background: transparent
+                - border: none
+                - box_shadow: none
+                - padding: 0px
+                - margin: 0 auto
+                - cursor: default
+                - width: 100%
+                - display: flex
+                - justify_content: center
+                - align_items: center
+              grid:
+                - grid-template-areas: '"clock"'
+                - grid-template-columns: 100%
+                - justify-items: center
+                - align-items: center
+                - width: 100%
+              custom_fields:
+                clock:
+                  - width: 100%
+                  - display: flex
+                  - flex-direction: column
+                  - align-items: center
+                  - justify-content: center
+                  - text-align: center
+                  - margin: 0 auto
+            custom_fields:
+              clock: |
+                [[[
+                  const now = new Date();
+                  let hours = now.getHours();
+                  const minutes = String(now.getMinutes()).padStart(2, '0');
+                  const ampm = hours >= 12 ? 'PM' : 'AM';
+                  hours = hours % 12;
+                  hours = hours ? hours : 12;
+
+                  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+                  const dateStr = `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}`;
+
+                  return `
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; width: 100%; max-width: 95vw; margin: 0 auto;">
+                      <div style="display: flex; align-items: baseline; justify-content: center; line-height: 0.82; margin: 0 auto; padding: 0;">
+                        <span style="font-size: min(24vw, 30vh, 220px); font-weight: 700; letter-spacing: -5px; color: #ef4444; font-variant-numeric: tabular-nums; text-shadow: 0 0 35px rgba(239, 68, 68, 0.4);">${hours}:${minutes}</span>
+                        <span style="font-size: min(6vw, 7vh, 50px); font-weight: 600; color: #b91c1c; margin-left: min(2.5vw, 18px); letter-spacing: 2px; text-transform: uppercase;">${ampm}</span>
+                      </div>
+                      <div style="font-size: min(4.5vw, 5.5vh, 36px); font-weight: 400; color: #991b1b; letter-spacing: 0.05em; margin-top: min(2.5vh, 22px); text-align: center;">${dateStr}</div>
+                    </div>
+                  `;
+                ]]]
+          - type: horizontal-stack
+            card_mod:
+              style: |
+                #root {
+                  display: flex !important;
+                  flex-direction: row !important;
+                  justify-content: center !important;
+                  align-items: center !important;
+                  gap: 16px !important;
+                  width: auto !important;
+                  margin: 0 auto !important;
+                }
+                #root > * {
+                  flex: 0 0 auto !important;
+                }
+            cards:
+              - type: custom:button-card
+                icon: mdi:brightness-6
+                name: Normal Clock
+                show_icon: true
+                show_name: true
+                styles:
+                  card:
+                    - width: 170px
+                    - height: 50px
+                    - background: rgba(239, 68, 68, 0.08)
+                    - border: 1px solid rgba(239, 68, 68, 0.25)
+                    - border_radius: 9999px
+                    - backdrop_filter: blur(12px)
+                    - cursor: pointer
+                    - margin: 0 auto
+                  grid:
+                    - grid-template-areas: '"i n"'
+                    - grid-template-columns: min-content 1fr
+                  icon:
+                    - color: '#ef4444'
+                    - width: 24px
+                  name:
+                    - color: '#fca5a5'
+                    - font_size: 15px
+                    - font_weight: 600
+                    - text_transform: none
+                tap_action:
+                  action: navigate
+                  navigation_path: /bedside-display/bedside
+
+  # =========================================================================
+  # VIEW 3: BEDSIDE CONTROLS
+  # =========================================================================
+  - title: Controls
+    path: controls
+    type: panel
+    badges: []
+    card_mod:
+      style: |
+        ha-app-layout {
+          --header-height: 0px !important;
+        }
+        app-header, ha-top-app-bar, .header {
+          display: none !important;
+        }
+        #view, hui-view, hui-panel-view {
+          padding: 24px 16px !important;
+          margin: 0 !important;
+          min-height: 100vh !important;
+          width: 100% !important;
+          box-sizing: border-box !important;
+          display: flex !important;
+          flex-direction: column !important;
+          justify-content: center !important;
+          align-items: center !important;
+          background: radial-gradient(circle at 50% 50%, #0f172a 0%, #030712 100%) !important;
+        }
+    cards:
+      - type: vertical-stack
+        card_mod:
+          style: |
+            ha-card {
+              border: none !important;
+              box-shadow: none !important;
+              background: transparent !important;
+            }
+            :host {
+              width: 100% !important;
+              max-width: 600px !important;
+              margin: 0 auto !important;
+            }
+        cards:
+          - type: horizontal-stack
+            cards:
+              - type: custom:button-card
+                icon: mdi:arrow-left
+                name: Back to Clock
+                show_icon: true
+                show_name: true
+                styles:
+                  card:
+                    - width: 180px
+                    - height: 46px
+                    - background: rgba(255, 255, 255, 0.06)
+                    - border: 1px solid rgba(255, 255, 255, 0.12)
+                    - border_radius: 9999px
+                    - margin_bottom: 20px
+                  grid:
+                    - grid-template-areas: '"i n"'
+                    - grid-template-columns: min-content 1fr
+                  icon:
+                    - color: '#38bdf8'
+                    - width: 20px
+                  name:
+                    - color: '#38bdf8'
+                    - font_size: 14px
+                    - font_weight: 600
+                tap_action:
+                  action: navigate
+                  navigation_path: /bedside-display/bedside
+              - type: custom:button-card
+                icon: mdi:home-outline
+                name: Overview
+                show_icon: true
+                show_name: true
+                styles:
+                  card:
+                    - width: 180px
+                    - height: 46px
+                    - background: rgba(255, 255, 255, 0.06)
+                    - border: 1px solid rgba(255, 255, 255, 0.12)
+                    - border_radius: 9999px
+                    - margin_bottom: 20px
+                  grid:
+                    - grid-template-areas: '"i n"'
+                    - grid-template-columns: min-content 1fr
+                  icon:
+                    - color: '#38bdf8'
+                    - width: 20px
+                  name:
+                    - color: '#38bdf8'
+                    - font_size: 14px
+                    - font_weight: 600
+                tap_action:
+                  action: navigate
+                  navigation_path: /home-overview/overview   # <-- REPLACE with your default dashboard path
+          - type: grid
+            columns: 2
+            square: false
+            cards:
+              - type: tile
+                entity: light.bedroom_lamp                  # <-- REPLACE with your night lamp
+                name: Bedside Lamp
+                features:
+                  - type: light-brightness
+                card_mod:
+                  style: |
+                    ha-card {
+                      background: rgba(255, 255, 255, 0.04) !important;
+                      border: 1px solid rgba(255, 255, 255, 0.08) !important;
+                      border-radius: 16px !important;
+                      backdrop-filter: blur(12px) !important;
+                    }
+              - type: tile
+                entity: fan.bedroom_fan                     # <-- REPLACE with your bedroom fan
+                name: Ceiling Fan
+                features:
+                  - type: fan-speed
+                card_mod:
+                  style: |
+                    ha-card {
+                      background: rgba(255, 255, 255, 0.04) !important;
+                      border: 1px solid rgba(255, 255, 255, 0.08) !important;
+                      border-radius: 16px !important;
+                      backdrop-filter: blur(12px) !important;
+                    }
+              - type: tile
+                entity: light.bedroom_ceiling_light         # <-- REPLACE with your ceiling light
+                name: Ceiling Light
+                features:
+                  - type: light-brightness
+                card_mod:
+                  style: |
+                    ha-card {
+                      background: rgba(255, 255, 255, 0.04) !important;
+                      border: 1px solid rgba(255, 255, 255, 0.08) !important;
+                      border-radius: 16px !important;
+                      backdrop-filter: blur(12px) !important;
+                    }
+              - type: tile
+                entity: input_boolean.sleep_mode            # <-- REPLACE with your sleep mode / helper
+                name: Sleep Mode
+                card_mod:
+                  style: |
+                    ha-card {
+                      background: rgba(255, 255, 255, 0.04) !important;
+                      border: 1px solid rgba(255, 255, 255, 0.08) !important;
+                      border-radius: 16px !important;
+                      backdrop-filter: blur(12px) !important;
+                    }
+```
